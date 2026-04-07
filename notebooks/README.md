@@ -2,6 +2,7 @@
 
 - `seller_data_pipeline_V1.4.ipynb` — previous notebook version (kept for reference).
 - `seller_data_pipeline_v2_colab.py` — improved Colab-ready pipeline code (V2).
+- `seller_data_pipeline_v2_colab.ipynb` — notebook version of the V2 pipeline for direct upload/run in Colab.
 
 ## Run V2 in Colab
 ```bash
