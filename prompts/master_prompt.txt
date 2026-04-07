@@ -1,0 +1,1365 @@
+I am attaching:
+1. a sample input file,
+2. the latest notebook/code,
+3. the latest generated outputs.
+
+Please inspect these carefully before generating the new version.
+
+Use them to understand:
+- the actual input artifact structure,
+- the current pipeline logic,
+- and the failure modes in the latest outputs.
+
+IMPORTANT:
+Do NOT merely patch the previous notebook superficially.
+Instead, use these files to design a materially better, more robust, generalized version.
+
+You are a senior Python Architect, Data Engineer, Applied AI Engineer, Information Extraction System Designer, and Google Colab notebook developer.
+
+Your task is to generate the BEST and MOST ROBUST version yet of a FULLY RUNNABLE, MODULAR, GOOGLE COLAB-READY `.ipynb` NOTEBOOK that processes semi-structured scraped seller artifact data from Excel/CSV files and converts it into structured seller enrichment outputs.
+
+IMPORTANT:
+This is a fresh chat, so you must rely ONLY on the information in this prompt and any files attached in this chat.
+
+IMPORTANT RESPONSE FORMAT REQUIREMENT:
+
+Return the final answer as:
+1. A SHORT architecture summary (keep it concise)
+2. Then the FULL notebook content immediately after
+
+Do NOT stop after planning.
+Do NOT give only partial code.
+Do NOT give only pseudo-code.
+Do NOT give only a Python script.
+
+I want the FULL, COMPLETE, SELF-CONTAINED Google Colab-ready `.ipynb` notebook content in this response.
+
+IMPORTANT IMPLEMENTATION CONSTRAINT:
+
+Generate this as a SINGLE SELF-CONTAINED Google Colab notebook (.ipynb) unless absolutely necessary.
+
+Do NOT split the solution into many helper files unless there is a very strong reason.
+
+I want something I can upload directly into Colab and run.
+
+IMPORTANT IMPLEMENTATION BIAS:
+Prefer simpler, stable, Colab-friendly implementations over fancy but fragile ones.
+If a lighter/stabler free tool is good enough, prefer it over a more complex cutting-edge option.
+
+IMPORTANT:
+Keep the notebook as practical and compact as possible while still meeting the requirements.
+Avoid unnecessary enterprise-style abstractions, overuse of classes, or splitting logic into excessive layers.
+
+========================================================
+CONTEXT / BUSINESS PROBLEM
+========================================================
+
+We already have online-scraped seller-related data and converted it into an Excel/CSV table.
+
+Each row in the input generally represents one scraped artifact or content object, such as:
+- product candidate
+- image
+- webpage snippet
+- brochure/document
+- PDF
+- video
+- text snippet
+- metadata object
+- scraped link
+- category section
+- company/about/contact section
+- social or marketing asset
+- legal/policy page
+- project/portfolio page
+- timeline/history block
+
+The business goal is to transform this messy seller-level scraped artifact table into structured seller enrichment outputs.
+
+This is for seller enrichment / lead enrichment / sales enablement.
+
+The downstream use case is:
+- identify who the seller/company is
+- identify contact/company details not cleanly available before
+- identify what products they actually sell
+- identify commercially useful offerings even if exact SKU-level products are not available
+- avoid wasting sales effort on weak or misleading seller profiles
+
+========================================================
+CRITICAL DESIGN PRINCIPLE
+========================================================
+
+Treat the input as:
+
+### EACH ROW = ONE SCRAPED ARTIFACT / CONTENT OBJECT
+
+NOT:
+- one clean product row
+- one clean company row
+- or one clean webpage record
+
+This is extremely important.
+
+The pipeline must be built accordingly.
+
+========================================================
+STRICT REQUIREMENT — GENERALIZED, NOT HARDCODED
+========================================================
+
+A sample Excel file may be attached to help you understand the type of semi-structured scraped seller artifact data this notebook should support.
+
+IMPORTANT:
+Do NOT hardcode the solution to that exact sample file.
+
+Use it only as:
+- a representative example of the type of semi-structured seller artifact data this pipeline should support
+
+The notebook must be generalized enough to work on future similar files with:
+- different columns
+- slightly different naming
+- different row mixes
+- different seller categories
+- different websites / industries
+
+The notebook must first implement generalized schema inference and semantic column detection before doing any extraction logic.
+
+It must not assume the sample file’s exact column names will always exist in future files.
+
+========================================================
+WHAT THE NOTEBOOK MUST SOLVE
+========================================================
+
+Given a messy seller-level scraped artifact Excel/CSV file, the notebook must:
+
+1. infer schema / semantic roles
+2. clean and normalize the data
+3. classify each row/artifact into a richer artifact taxonomy
+4. extract seller/company-level information
+5. determine which rows are ACTUAL PRODUCTS
+6. determine which rows are CATEGORY / OFFERING / PORTFOLIO / CONTACT / LEGAL / COMPANY INFO / IRRELEVANT
+7. extract product-level structured data
+8. extract commercially useful seller offerings
+9. deduplicate product rows
+10. preserve traceability and confidence
+11. export structured outputs + debug outputs
+12. generate integrity / reconciliation reports
+
+========================================================
+MOST IMPORTANT REQUIREMENT OF ALL
+========================================================
+
+The notebook must correctly determine what is actually a REAL PRODUCT.
+
+This is the single most important requirement.
+
+Some rows may:
+- be labeled as products
+- have product-like URLs
+- have product-like images
+- have product-ish text
+
+BUT STILL NOT be actual sellable products.
+
+Examples of false positives:
+- category pages
+- menu sections
+- service pages
+- “our products” landing pages
+- brochure covers
+- banners
+- logos
+- marketing slogans
+- feature cards
+- generic solution buckets
+- collection names
+- company positioning text
+- decorative or irrelevant media
+- terms & conditions pages
+- privacy/legal pages
+- project/portfolio pages
+- company history/timeline sections
+- contact page sections
+
+Therefore:
+### DO NOT blindly trust:
+- Item Type
+- Detection Method
+- URL path
+- image presence
+- “product” words
+- scraped labels
+
+Instead, build a REAL PRODUCT VALIDATION LAYER using multiple interpretable signals.
+
+========================================================
+IMPORTANT LESSONS / KNOWN FAILURE MODES THIS VERSION MUST FIX
+========================================================
+
+The previous versions suffered from these problems. This new notebook must explicitly solve them:
+
+1. WRONG COMPANY NAMES
+Bad extracted company names included examples like:
+- Link Scanning
+- Keep in touch
+- Location
+- Marketing office
+- Demat Account
+- STEEL BROCHURE
+- OurFavourites
+- generic taglines / headings / brochure titles
+
+This must be fixed.
+
+2. WRONG COMPANY DESCRIPTIONS
+Bad extracted company descriptions included:
+- product descriptions
+- milestone timeline text
+- safety notice text
+- brochure snippets
+- random page text
+
+This must be fixed.
+
+3. FALSE POSITIVE PRODUCTS
+Bad rows were incorrectly treated as products, such as:
+- “Leading Developers of Premium Residential and Commercial Spaces”
+- “General terms and conditions for use of the website”
+- generic slogans / headings / descriptive claims
+
+This must be fixed.
+
+4. GARBAGE OFFERINGS
+Bad offerings included:
+- Our Journey
+- Inception
+- Expansion and Growth
+- Digital Transformation
+- Marketing office
+- history/timeline content
+- contact fragments
+
+This must be fixed.
+
+5. PIPELINE INTEGRITY BUGS
+Previous versions showed inconsistencies such as:
+- validation debug saying products were found
+- processing summary showing products found
+- final product output exporting zero rows
+
+This must be fixed with reconciliation checks.
+
+6. OVER-TRIGGERED HOOKS
+Previous versions ran OCR / image hooks too often, often on rows where they should not have run.
+
+This must be fixed with stricter gating.
+
+========================================================
+INPUT ASSUMPTION
+========================================================
+
+The input is an Excel or CSV file where each row likely represents one scraped artifact.
+
+The file may contain columns such as (examples only — do NOT hardcode only these):
+- Unique Identifier
+- Source URL
+- Found On Page
+- Item Type
+- Name
+- Brand
+- SKU
+- Link
+- Description
+- Price
+- Product Specifications
+- Ratings
+- Reviews
+- Any Other Information
+- Image URL
+- Video URL
+- Document URL
+- Category/Format
+- Detection Method
+- Website
+- Page Title
+- Raw Text
+- etc.
+
+Future files may differ in schema, so the notebook must use:
+- generalized schema inference
+- adaptive semantic column detection
+- keyword + fuzzy + heuristic matching
+- support for multiple columns mapping to similar semantic roles
+
+========================================================
+REQUIRED PIPELINE CAPABILITIES
+========================================================
+
+The notebook must implement the following capabilities:
+
+========================================================
+1) DATA INGESTION + SCHEMA INFERENCE
+========================================================
+
+- Read Excel and CSV robustly
+- Support multiple sheets
+- Merge sheets intelligently if needed
+- Infer semantic column roles using:
+  - keyword mapping
+  - fuzzy matching
+  - heuristic matching
+- Preserve original row traceability
+
+Infer semantic roles such as:
+- seller_id / unique_identifier
+- source_url
+- found_on_page
+- item_type
+- item_name
+- brand
+- sku
+- artifact_link
+- description
+- price
+- product_specifications
+- ratings
+- reviews
+- other_info
+- image_url
+- video_url
+- document_url
+- category_format
+- detection_method
+- website
+- raw_text
+- page_title
+- etc.
+
+IMPORTANT:
+Allow multiple columns per semantic role if useful.
+
+========================================================
+2) DATA CLEANING / NORMALIZATION
+========================================================
+
+Implement robust cleaning and normalization, including:
+- normalize nulls
+- strip whitespace
+- normalize URLs
+- normalize emails
+- normalize phones
+- normalize text
+- preserve raw useful evidence
+- deduplicate exact duplicate rows
+- repair common encoding / mojibake issues where practical
+
+========================================================
+3) RICH ARTIFACT CLASSIFICATION (VERY IMPORTANT)
+========================================================
+
+The previous versions used too-coarse artifact classes. This version must use a richer routing taxonomy.
+
+Each row should be classified into a more useful artifact class such as:
+
+- PRODUCT_CANDIDATE
+- CATEGORY_OR_OFFERING
+- COMPANY_INFO
+- CONTACT_INFO
+- POLICY_OR_LEGAL
+- PROJECT_OR_PORTFOLIO
+- BROCHURE_OR_DOCUMENT
+- IMAGE_MEDIA
+- MARKETING_OR_BRANDING
+- GENERAL_WEBPAGE
+- IRRELEVANT_OR_UNKNOWN
+
+IMPORTANT:
+This classification layer is critical because it determines downstream routing.
+
+This classification must use signals such as:
+- item type
+- name
+- description
+- product specifications
+- image URL
+- document URL
+- source URL
+- category/format
+- detection method
+- page title
+- domain/page path keywords
+- text patterns
+- row content density
+- seller context
+
+This classification should be:
+- interpretable
+- useful for downstream routing
+- not just a cosmetic label
+
+========================================================
+4) COMPANY IDENTITY RESOLUTION (NEW — VERY IMPORTANT)
+========================================================
+
+The notebook must include an explicit COMPANY IDENTITY RESOLUTION layer before final company extraction.
+
+This layer must determine:
+- the most likely company/legal/brand name
+- which candidate text snippets are likely company identity
+- which snippets are clearly NOT company identity
+
+This is required because previous versions wrongly used:
+- CTA text
+- contact headings
+- brochure titles
+- product names
+- generic headings
+as company names.
+
+The company identity resolver should:
+- build candidate company-name snippets from trusted rows/pages
+- rank them using source trust and pattern quality
+- reject bad candidates such as:
+  - “Keep in touch”
+  - “Location”
+  - “Marketing office”
+  - “OurFavourites”
+  - “Link Scanning”
+  - brochure titles
+  - product names
+  - long descriptive slogans
+- prefer:
+  - homepage branding
+  - about page naming
+  - footer/contact/legal references
+  - domain-consistent brand naming
+  - legal suffix patterns where present (Pvt Ltd, LLP, Ltd, Industries, etc.)
+
+This layer should output:
+- best_company_name
+- company_name_confidence
+- company_name_candidate_sources
+- rejected_company_name_candidates
+
+========================================================
+5) COMPANY DETAILS EXTRACTION
+========================================================
+
+Build a standardized COMPANY_DETAILS table with ONE ROW PER SELLER.
+
+Suggested fields:
+- seller_id
+- registered_company_name
+- brand_name
+- business_type
+- industry
+- sub_industry
+- company_description
+- primary_phone
+- alternate_phones
+- primary_email
+- alternate_emails
+- whatsapp_number
+- website
+- registered_address
+- city
+- state
+- pincode
+- country
+- year_established
+- years_in_business
+- employee_count_if_found
+- certifications
+- exporter_flag
+- importer_flag
+- manufacturer_flag
+- distributor_flag
+- facebook_url
+- instagram_url
+- linkedin_url
+- youtube_url
+- company_data_confidence_score
+- company_data_sources
+- missing_fields
+- notes_for_manual_review
+
+IMPORTANT RULES:
+- Company extraction must avoid contamination from product rows.
+- Do not use product snippets as company description unless unavoidable.
+- Do not accidentally use irrelevant columns as company name.
+- Use conservative extraction and confidence-based source prioritization.
+- If a field is uncertain, leave it blank or flag for review instead of hallucinating.
+
+IMPORTANT:
+Certification extraction must be safe and precise.
+Do NOT use naive substring matching like “ce” inside arbitrary text.
+Only detect certifications using reliable boundary/context-based patterns.
+
+IMPORTANT:
+Implement explicit FIELD-LEVEL SOURCE RANKING for company extraction.
+
+For each important company field (such as company name, website, phone, email, address, description), define a ranked trust hierarchy of evidence sources.
+
+Example:
+- homepage / about / footer / contact page evidence = higher trust
+- brochure title / image alt text / product rows / CTA text = lower trust
+
+The notebook should:
+- prefer higher-trust sources first
+- only fall back to lower-trust sources if needed
+- store the selected source type for each important extracted field where practical
+
+IMPORTANT:
+Company description extraction must be much stricter than before.
+
+Do NOT use:
+- product PDP text
+- menu item text
+- policy/legal text
+- timeline/history text
+- contact fragments
+- generic slogans
+as company_description unless absolutely no better evidence exists.
+
+========================================================
+6) REAL PRODUCT VALIDATION (MOST IMPORTANT)
+========================================================
+
+Build a PRODUCT VALIDATION LAYER.
+
+It must determine whether a row represents a REAL PRODUCT using multiple signals such as:
+- item name specificity
+- SKU / model / part number
+- product specifications
+- meaningful product-like description
+- product page URL
+- price / quantity / variant clues
+- image evidence
+- category consistency
+- whether it looks like a product vs category / section / generic offering / slogan / marketing copy
+
+Required product-level fields:
+- is_actual_product
+- product_confidence_score
+- product_validation_reasoning
+- needs_manual_review
+
+IMPORTANT:
+Do NOT rely only on one signal.
+Use a weighted or interpretable multi-signal scoring system.
+
+IMPORTANT:
+The system must explicitly reduce false positives such as:
+- marketing slogans
+- real-estate amenity cards
+- “about us” feature blocks
+- brochure covers
+- category-only labels
+- section headers
+- collection names
+- decorative media
+- legal/policy pages
+- project/portfolio headings
+- timeline/history content
+- generic corporate claims
+
+IMPORTANT:
+The system must also avoid false negatives where a valid product is embedded in:
+- brochure rows
+- menu rows
+- image-heavy rows
+- partially structured rows
+
+========================================================
+7) HARD EXCLUSION LAYER FOR NON-PRODUCT ARCHETYPES
+========================================================
+
+Do NOT rely only on weighted scoring for final product inclusion.
+
+Also implement a HARD EXCLUSION LAYER before final product inclusion.
+
+That means some rows must be automatically blocked from becoming final products if they strongly match known non-product archetypes, even if their weighted score is otherwise high.
+
+Examples of hard exclusion archetypes:
+- company/about/vision/mission text
+- marketing slogans
+- feature/value cards
+- trust/credibility claims
+- contact/help/support rows
+- “why us” sections
+- category landing pages
+- brochure covers
+- team/leadership/person names
+- real-estate amenity / lifestyle phrases
+- generic solution/collection names without item-level specificity
+- terms & conditions
+- privacy / legal / disclaimer text
+- project/portfolio pages
+- timeline/history/milestone sections
+- support/help/contact labels
+- office/location labels
+
+Only allow override of hard exclusion if there is very strong contrary evidence such as:
+- SKU/model
+- clear product page structure
+- price
+- specification table
+- very product-specific description
+
+This is a critical requirement.
+
+========================================================
+8) CATEGORY VS PRODUCT VS OFFERING DISTINCTION
+========================================================
+
+This is critical.
+
+The notebook must explicitly distinguish:
+- actual product
+vs
+- category / family / menu section / collection / solution bucket
+vs
+- project / portfolio
+vs
+- company history / milestone
+vs
+- contact / office / support
+vs
+- policy/legal
+
+Examples of category-like entries:
+- “Industrial Pumps”
+- “Our Products”
+- “Desserts”
+- “Chicken Dishes”
+- “Valves”
+- “Concrete Additives”
+- “Woodgrain”
+- “Security Features”
+
+These should NOT automatically become final product rows unless clearly product-specific.
+
+If useful, include internal logic such as:
+- entity_level = PRODUCT / CATEGORY / OFFERING / COMPANY / CONTACT / POLICY / PROJECT / UNKNOWN
+
+========================================================
+9) PRODUCT EXTRACTION
+========================================================
+
+Build PRODUCT_CATALOGUE with one row per likely REAL PRODUCT.
+
+Suggested fields:
+- seller_id
+- product_id
+- product_name
+- normalized_product_name
+- product_category
+- sub_category
+- entity_level
+- brand_if_any
+- sku_if_any
+- short_description
+- long_description
+- key_features
+- applications
+- materials_if_any
+- specifications_extracted
+- specifications_available_flag
+- specification_table_json
+- dimensions_if_any
+- capacity_if_any
+- power_if_any
+- model_numbers_if_any
+- product_image_urls
+- product_page_url
+- brochure_reference
+- source_text_snippet
+- is_actual_product
+- product_confidence_score
+- product_validation_reasoning
+- duplicate_group
+- needs_manual_review
+- notes_for_manual_review
+
+IMPORTANT:
+If specifications are missing:
+- DO NOT hallucinate them
+- set:
+  - specifications_available_flag = "No"
+  - specifications_extracted = "Not Acquired"
+
+If a product page URL exists but specs are missing:
+- preserve the URL
+- clearly indicate specs were not acquired
+
+========================================================
+10) OFFERING ELIGIBILITY LAYER (NEW — VERY IMPORTANT)
+========================================================
+
+The previous versions were too permissive and allowed garbage offerings.
+
+This version must include an explicit OFFERING ELIGIBILITY LAYER.
+
+A row should become an offering ONLY if it looks like a commercially meaningful non-SKU offering such as:
+- product family
+- service line
+- commercial category
+- menu family
+- collection
+- range
+- solution line
+- portfolio family (if commercially meaningful)
+
+A row must NOT become an offering merely because it is “not a product.”
+
+Examples that must be excluded from offerings:
+- Our Journey
+- Inception
+- Expansion and Growth
+- Digital Transformation
+- Marketing office
+- Keep in touch
+- Location
+- terms & conditions
+- timeline/history text
+- policy/legal text
+- office/contact fragments
+- generic headings
+
+This is critical.
+
+========================================================
+11) THIRD BUSINESS-USEFUL OUTPUT:
+SELLER_OFFERINGS_OUTPUT
+========================================================
+
+Generate a third lightweight structured output:
+
+seller_offerings_output.xlsx
+
+Purpose:
+Capture commercially meaningful non-SKU offerings that are not specific enough to be final products but are still useful for seller enrichment.
+
+Examples:
+- product families
+- categories
+- menu sections
+- solution buckets
+- collections
+- brochure-derived offering themes
+
+Suggested fields:
+- seller_id
+- offering_id
+- offering_name
+- offering_type
+- normalized_offering_name
+- source_row
+- source_url
+- source_text_snippet
+- confidence_score
+- notes_for_manual_review
+
+IMPORTANT:
+Do NOT merge these into the final PRODUCT_CATALOGUE unless they truly meet product-level criteria.
+
+========================================================
+12) DEDUPLICATION
+========================================================
+
+Deduplicate products using:
+- normalized name similarity
+- same/similar URLs
+- same images
+- same SKU/model
+- seller-level grouping
+
+Do not over-merge unrelated products.
+
+Create:
+- normalized_product_name
+- duplicate_group
+
+IMPORTANT:
+Do not let deduplication accidentally delete all valid products.
+Add safeguards and reconciliation checks.
+
+========================================================
+13) PIPELINE INTEGRITY / RECONCILIATION CHECKS (NEW — CRITICAL)
+========================================================
+
+This is a mandatory addition.
+
+The notebook must include a final RECONCILIATION / INTEGRITY CHECK layer to ensure pipeline consistency.
+
+It must explicitly verify:
+
+- number of product candidates
+- number of rows marked as final_product_decision = True
+- number of rows exported into final product catalogue
+- number of rows routed to offerings
+- number of rows routed to company evidence
+- number of rows excluded
+- number of rows dropped after validation and why
+
+IMPORTANT:
+If a row is marked as a valid final product in validation debug, then one of the following must happen:
+
+1. It appears in the final product catalogue
+OR
+2. It is explicitly logged as excluded later with a specific reason
+
+No silent disappearance allowed.
+
+This is extremely important.
+
+========================================================
+14) DEBUG / TRACEABILITY OUTPUTS
+========================================================
+
+The notebook must save useful debug outputs such as:
+
+- cleaned_intermediate_data.xlsx
+- artifact_classification_output.xlsx
+- product_validation_debug_output.xlsx
+- pipeline_reconciliation_report.xlsx or .json
+
+The debug output must help explain:
+- why something was treated as product / non-product
+- why something was excluded
+- score breakdown
+- review flags
+- final row routing
+- reconciliation counts
+
+========================================================
+15) INTEGRATED AI / ML EXTENSION HOOKS
+========================================================
+
+The notebook must include AND INTEGRATE the following extension capabilities into the actual pipeline architecture.
+
+IMPORTANT:
+These must NOT just be disconnected placeholder functions.
+
+They must be:
+- actual integration points in the pipeline flow
+- optional and configurable
+- safe to disable
+- logged clearly when invoked
+- practical to run in Colab
+
+The notebook must include a central CONFIG section with flags such as:
+- ENABLE_OCR_HOOK
+- ENABLE_IMAGE_CLASSIFIER_HOOK
+- ENABLE_LLM_EXTRACTION_HOOK
+- ENABLE_SPEC_FETCH_HOOK
+- ENABLE_EVALUATION_HOOK
+
+If a hook is disabled:
+- the pipeline must continue normally using fallback logic
+
+If enabled:
+- the pipeline must know exactly where and how to call it
+
+========================================================
+HOOK 1 — OCR / DOCUMENT TEXT EXTRACTION HOOK
+========================================================
+
+Implement and integrate a hook function like:
+
+hook_ocr_extraction(image_url_or_doc_url: str) -> str
+
+Purpose:
+Extract text from:
+- product images
+- brochure images
+- scanned PDFs
+- image-heavy catalog pages
+
+IMPORTANT:
+For document and brochure URLs, do NOT rely only on OCR.
+
+Implement a document text extraction hierarchy:
+
+1. First try direct PDF/text extraction (for text-based PDFs and machine-readable docs)
+2. If direct extraction fails or returns weak text, then optionally use OCR on document pages/images
+
+When this hook should be invoked:
+- row has actual image URL or document URL
+- row has weak or missing text/specs
+- media likely contains useful text
+- row is a high-value unresolved candidate
+
+IMPORTANT:
+Do NOT trigger OCR broadly on ordinary webpage rows or rows without a valid media asset.
+
+The notebook should preserve:
+- extracted brochure/document text
+- extraction method used
+- whether extraction was weak/partial
+- whether brochure-derived evidence influenced product or offering extraction
+
+========================================================
+HOOK 2 — IMAGE PRODUCT CLASSIFIER HOOK
+========================================================
+
+Implement and integrate a hook function like:
+
+hook_image_product_classifier(image_url: str) -> dict
+
+Returns something like:
+{
+  "is_product_image": bool,
+  "confidence": float,
+  "category": str
+}
+
+Purpose:
+- help determine whether an image actually depicts a product
+- improve product validation and image filtering
+
+When it should be invoked:
+- row has real image URL
+- row is image-heavy or ambiguous
+- image evidence could materially change product confidence
+
+IMPORTANT:
+The image classifier hook must NOT be allowed to strongly determine final product inclusion on its own.
+
+Its output should only act as a secondary confidence modifier, not a primary decision-maker.
+
+Textual, structural, and page-context signals must remain more important than image-only signals for final product validation.
+
+IMPORTANT:
+Do NOT trigger image classification on every row.
+Only trigger it selectively.
+
+========================================================
+HOOK 3 — LLM EXTRACTION HOOK
+========================================================
+
+Implement and integrate a hook function like:
+
+hook_llm_extraction(text: str, task: str = "product") -> dict
+
+Supported tasks:
+- "product"
+- "company"
+- "offering"
+
+Purpose:
+Use a FREE / OPEN-SOURCE LLM to extract structured information from messy text when rule-based extraction is weak.
+
+When it should be invoked selectively:
+- low-confidence product candidate
+- low-confidence company record
+- low-confidence offering candidate
+- messy but information-dense text
+- unresolved extraction cases for high-value rows only
+
+IMPORTANT:
+Do NOT make the notebook dependent on paid hosted APIs.
+It must use a free/open-source approach or a practical local fallback.
+
+IMPORTANT:
+Do NOT make the default LLM hook depend on a 7B quantized model.
+
+The default LLM hook must use a lighter, more practical free/open-source model that is stable in Google Colab free tier and sufficient for selective structured extraction / classification.
+
+The LLM hook should be treated as an assistive fallback, not a core dependency.
+
+Requirements:
+- Use a lightweight default model practical for Colab
+- Keep heavier models only as optional upgrade paths (if you mention them at all)
+- Make the notebook run fully even if the LLM hook is disabled
+- Use the LLM hook only selectively, never on every row
+
+IMPORTANT:
+Use correct, current Hugging Face / transformers APIs and valid task names only.
+
+========================================================
+HOOK 4 — PRODUCT SPEC FETCH HOOK
+========================================================
+
+Implement and integrate a hook function like:
+
+hook_fetch_product_specs(product_page_url: str) -> str
+
+Purpose:
+If a product page URL exists but specs are missing, optionally fetch the page and try to extract spec tables or spec-like sections.
+
+When it should be invoked:
+- product row identified
+- product page URL exists
+- specifications missing or weak
+
+IMPORTANT:
+Use safe requests / parsing with:
+- timeout handling
+- error handling
+- basic retry limits
+- clean HTML parsing
+
+========================================================
+HOOK 5 — EVALUATION HOOK
+========================================================
+
+Implement and integrate a hook function like:
+
+hook_evaluate_precision_recall(predicted_df: pd.DataFrame, ground_truth_df: pd.DataFrame) -> dict
+
+Purpose:
+Compare pipeline predictions against manually labeled ground truth.
+
+Use cases:
+- evaluate product detection accuracy
+- evaluate precision / recall / F1
+- compare future improvements
+
+Expected output:
+{
+  "precision": ...,
+  "recall": ...,
+  "f1": ...,
+  "confusion_matrix": ...
+}
+
+If no ground truth is provided:
+- safely skip evaluation
+
+========================================================
+16) HOOK DEBUG OUTPUT (HIGHLY DESIRED)
+========================================================
+
+Also include a debug export such as:
+
+- hook_debug_log_output.xlsx
+
+This should show:
+- which rows triggered which hooks
+- why the hook was triggered
+- what the hook returned
+- whether hook output changed confidence
+- whether hook output affected final inclusion/exclusion
+
+IMPORTANT:
+The hook log should make it easy to detect over-triggering.
+
+========================================================
+STRICT COST / TOOL CONSTRAINT — FREE IMPLEMENTATION ONLY
+========================================================
+
+I do NOT have any paid subscriptions or paid API access.
+
+Therefore, all extension hooks, integrations, models, and tools used in this notebook must be:
+
+- FREE to use
+- preferably OPEN-SOURCE
+- runnable locally in Google Colab
+- not dependent on paid APIs or enterprise accounts
+
+This is a strict requirement.
+
+Do NOT design the notebook around:
+- paid OCR APIs
+- paid LLM APIs
+- paid image classification APIs
+- paid product search APIs
+- paid cloud extraction services
+
+Instead, prefer:
+- open-source Python libraries
+- Hugging Face models
+- free community models
+- free local inference options
+- tools runnable directly inside Google Colab
+
+========================================================
+LATEST + PRACTICAL TOOL REQUIREMENT
+========================================================
+
+Use the LATEST PRACTICAL FREE tools/models available for this use case — not outdated defaults unless there is a strong reason.
+
+For each hook, explicitly choose:
+1. the best practical free/latest option
+2. a lighter fallback if the main choice is too heavy for normal Colab
+
+Examples of acceptable directions:
+- OCR: EasyOCR, PaddleOCR, docTR, pytesseract (only if justified)
+- image classification / vision: CLIP, SigLIP, DINOv2, or other practical free models
+- LLM extraction: free Hugging Face instruct models / extraction-friendly models / local transformers pipelines
+- spec fetch: requests + BeautifulSoup + free parsing libraries
+- evaluation: sklearn metrics
+
+IMPORTANT:
+Do NOT assume I have:
+- Anthropic API
+- OpenAI API
+- Google Cloud paid services
+- AWS paid services
+- Azure paid services
+- enterprise subscriptions
+
+If a hook cannot be fully implemented locally in a practical way:
+- provide the best free local fallback
+- clearly explain the tradeoff
+
+========================================================
+IMPORTANT FOR THE LLM EXTRACTION HOOK
+========================================================
+
+Do NOT assume access to Claude API, GPT API, or any paid hosted LLM.
+
+The LLM extraction hook must be designed using FREE / OPEN-SOURCE alternatives runnable in Colab, such as:
+- Hugging Face transformers pipelines
+- small/medium instruct models
+- structured extraction-friendly open models
+- quantized local inference only if truly practical
+
+Prefer models that are:
+- reasonably recent
+- practical in Colab
+- lightweight enough to run without enterprise GPU infrastructure
+
+Also explain:
+- which free model you selected
+- why it is a practical choice
+- what the limitations are compared to paid frontier APIs
+
+IMPORTANT:
+Use the correct and currently supported Hugging Face / transformers pipeline APIs and task names.
+Do NOT use deprecated or invalid task names.
+
+========================================================
+IMPORTANT FOR OCR AND IMAGE HOOKS
+========================================================
+
+Choose free, practical, current tools that can run in Colab.
+
+Do not just mention old or generic libraries without thought.
+
+For OCR, recommend and integrate the most practical free option for this use case:
+- scraped product images
+- brochure images
+- scanned PDFs
+- screenshots
+- image-heavy product pages
+
+For image product classification, recommend and integrate a free vision model practical for:
+- product vs non-product distinction
+- broad product-type inference
+- image relevance filtering
+
+Explain why the selected free tools/models are suitable for this seller enrichment task.
+
+========================================================
+GOOGLE COLAB / COMPUTE CONSIDERATIONS (VERY IMPORTANT)
+========================================================
+
+The notebook must be designed to run reliably in standard Google Colab (free tier), with optional GPU usage.
+
+All models/tools selected for extension hooks must be:
+- lightweight enough for Colab
+- practical to run without high-end GPUs
+- used selectively (NOT on every row)
+
+Expected design constraints:
+
+1) OCR (EasyOCR / PaddleOCR / docTR / similar)
+- Approx model size: ~300MB–500MB
+- First-run download acceptable
+- GPU preferred but CPU fallback acceptable
+- Must only run when useful
+
+2) Image Classification (CLIP / SigLIP / similar lightweight models)
+- Approx model size: ~300MB–400MB
+- CPU-compatible
+- Must support selective inference
+- Batching preferred
+
+3) LLM Extraction (small/medium instruct model)
+- Approx model size: ideally practical for Colab
+- CPU-compatible if possible
+- Must only be invoked selectively
+- MUST NOT run on every row
+
+4) Spec Fetch (requests + BeautifulSoup)
+- lightweight
+- must include timeout/error handling
+
+5) Evaluation (sklearn)
+- negligible overhead
+- runs only if labels provided
+
+CRITICAL PERFORMANCE RULES:
+- Hooks should run ONLY when needed
+- Never run heavy hooks on all rows blindly
+- Each hook must be controlled by a config flag
+- The pipeline must run FULLY even with all hooks disabled
+- If a hook fails, log and skip gracefully
+- Add caching / lazy loading / batching where practical
+- Avoid repeated model loading
+
+The pipeline must be:
+- runnable in Google Colab free tier
+- reasonably fast on medium-sized datasets (~100–1000 rows)
+- not memory-intensive
+- practical for an intern/student without specialized infrastructure
+
+========================================================
+OPTIONAL EVALUATION / METRICS SUPPORT
+========================================================
+
+The notebook should optionally support evaluation if a manually labeled ground truth file is later provided.
+
+This should allow:
+- precision
+- recall
+- F1
+- confusion matrix
+- future comparison of versions
+
+========================================================
+REQUIRED FINAL OUTPUT FILES
+========================================================
+
+The notebook should generate the following outputs:
+
+PRIMARY OUTPUTS:
+- company_details_output.xlsx
+- product_catalogue_output.xlsx
+- seller_offerings_output.xlsx
+
+DEBUG / SUPPORT OUTPUTS:
+- cleaned_intermediate_data.xlsx
+- artifact_classification_output.xlsx
+- product_validation_debug_output.xlsx
+- hook_debug_log_output.xlsx
+- pipeline_reconciliation_report.xlsx or .json
+
+OPTIONAL:
+- evaluation_metrics_output.json or .xlsx
+- processing_summary.json or .txt
+
+========================================================
+REQUIRED NOTEBOOK DELIVERY FORMAT
+========================================================
+
+Please return the final solution as a FULLY RUNNABLE GOOGLE COLAB-READY `.ipynb` NOTEBOOK, NOT just a `.py` file.
+
+The notebook must:
+- be directly uploadable/importable into Colab
+- be runnable end-to-end
+- contain markdown explanation cells
+- contain clearly labeled execution cells
+- include a final "Upload File & Run Pipeline" cell
+- include an optional "Run Evaluation" section
+- be structured cleanly and professionally
+
+========================================================
+REQUIRED NOTEBOOK CELL STRUCTURE
+========================================================
+
+Please organize the notebook into clear cells such as:
+
+1. Install Dependencies
+2. Imports & Logging
+3. Configuration Flags (including hook enable/disable flags)
+4. Utility Helpers
+5. Schema Inference / Column Role Detection
+6. Data Ingestion
+7. Cleaning / Normalization
+8. Rich Artifact Classification
+9. Company Identity Resolution
+10. Optional Artifact Enrichment (where OCR / image / LLM hooks can feed in)
+11. Company Details Extraction
+12. Product Validation
+13. Product Extraction
+14. Offering Eligibility + Seller Offerings Extraction
+15. Deduplication
+16. Pipeline Integrity / Reconciliation Checks
+17. Debug Outputs
+18. Export Outputs
+19. Full Pipeline Runner
+20. Upload File & Run Pipeline
+21. Optional Evaluation Section
+
+========================================================
+IMPLEMENTATION REQUIREMENTS
+========================================================
+
+The notebook must be:
+- modular
+- readable
+- well-commented
+- production-style
+- easy to modify
+- Colab-friendly
+
+Must include:
+- docstrings
+- logging
+- error handling
+- configurable thresholds
+- configurable keyword lists
+- fallback behavior if hooks are disabled
+- traceability back to source rows
+
+========================================================
+IMPORTANT DESIGN PRINCIPLES
+========================================================
+
+Please follow these carefully:
+
+1. GENERALIZABILITY OVER HARD-CODING
+2. CONSERVATIVE EXTRACTION OVER HALLUCINATION
+3. TRACEABILITY OVER BLACK-BOX OUTPUT
+4. BUSINESS USABILITY OVER FRAGILE LOGIC
+5. REAL PRODUCT DETECTION OVER BLIND TRUST OF SCRAPED LABELS
+6. EXTENSIBILITY AS A FIRST-CLASS DESIGN PRINCIPLE
+7. FREE IMPLEMENTATION ONLY (NO PAID DEPENDENCIES)
+8. COLAB PRACTICALITY OVER HEAVY / UNUSABLE MODELS
+9. PIPELINE INTEGRITY OVER SILENT FAILURES
+10. ROUTING QUALITY OVER BLIND EXTRACTION
+
+========================================================
+WHAT I WANT FROM YOU
+========================================================
+
+Please provide:
+
+1. A short explanation FIRST of:
+   - the pipeline architecture
+   - what each hook solves
+   - exactly where each hook will be invoked
+   - what fallback behavior happens if each hook is disabled
+   - which free/open-source/latest tool/model you selected for each hook and why
+   - what the expected limitations are
+
+2. Then provide the FULL Google Colab-ready `.ipynb` notebook.
+
+3. Also include:
+   - instructions to run
+   - notes on tuning thresholds
+   - notes on Colab / compute limitations
+   - notes on how to later swap in better free models if needed
+
+IMPORTANT:
+Do NOT leave hooks as disconnected stubs.
+They must be integrated into the actual decision flow of the pipeline.
+
+IMPORTANT:
+Use correct, current Python library usage and avoid invalid/deprecated API patterns.
+
+IMPORTANT:
+Do not optimize only for the attached sample file.
+Optimize for this broader class of semi-structured seller scraped artifact datasets.
+
+IMPORTANT FINAL QUALITY REQUIREMENT:
+This version should explicitly prioritize fixing:
+- wrong company names
+- wrong company descriptions
+- false positive products
+- garbage offerings
+- over-triggered hooks
+- pipeline reconciliation failures
+
+Now generate the best possible notebook solution.
